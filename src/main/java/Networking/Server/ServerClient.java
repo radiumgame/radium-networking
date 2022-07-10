@@ -1,5 +1,6 @@
 package Networking.Server;
 
+import Networking.DisconnectReason;
 import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
 
@@ -44,8 +45,8 @@ public class ServerClient {
         update.start();
     }
 
-    public void disconnect(boolean sendPacket) throws Exception {
-        if (sendPacket) ServerSend.forceDisconnect(this);
+    public void disconnect(boolean sendPacket, DisconnectReason reason) throws Exception {
+        if (sendPacket) ServerSend.forceDisconnect(this, reason);
 
         update.stop();
 
@@ -103,7 +104,7 @@ public class ServerClient {
     private void handlePacketCallback(Packet packet, int id) throws Exception {
         if (packet.isType(ClientPacket.Disconnect, id)) {
             server.removeClient(this.id);
-            disconnect(false);
+            disconnect(false, DisconnectReason.ClientDisconnect);
         }
     }
 

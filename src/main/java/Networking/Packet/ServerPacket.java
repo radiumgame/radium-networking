@@ -2,7 +2,7 @@ package Networking.Packet;
 
 public enum ServerPacket {
 
-    Close,
+    ForceDisconnect,
     AssignID,
 
 }

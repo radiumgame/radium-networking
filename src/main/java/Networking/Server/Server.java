@@ -1,5 +1,7 @@
 package Networking.Server;
 
+import Networking.DisconnectReason;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -42,7 +44,7 @@ public class Server {
 
     public void close() throws Exception {
         for (ServerClient client : getClients()) {
-            client.disconnect(true);
+            client.disconnect(true, DisconnectReason.ServerClose);
         }
 
         open = false;
@@ -52,8 +54,13 @@ public class Server {
 
     private void acceptClients() throws Exception {
         Socket newClient = serverSocket.accept();
+
         String id = generateId();
         ServerClient client = new ServerClient(id, newClient, this);
+        if (clients.size() >= MAX_CLIENTS) {
+            client.disconnect(true, DisconnectReason.ServerFull);
+            return;
+        }
 
         ServerSend.assignId(client);
 

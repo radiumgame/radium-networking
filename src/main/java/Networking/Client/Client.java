@@ -1,11 +1,16 @@
 package Networking.Client;
 
+import Networking.Callbacks.ClientCallback;
+import Networking.DisconnectReason;
 import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class Client {
 
@@ -13,8 +18,8 @@ public class Client {
     private DataInputStream input;
     private DataOutputStream output;
 
-    private String server;
-    private int port;
+    private final String server;
+    private final int port;
     private String id;
 
     private boolean connected;
@@ -24,12 +29,16 @@ public class Client {
     private byte[] receiveBuffer;
     private Packet receiveData;
 
+    private final List<ClientCallback> callbacks = new ArrayList<>();
+
     public Client(String server, int port) {
         this.server = server;
         this.port = port;
     }
 
     public void connect() throws Exception {
+        if (connected) return;
+
         socket = new Socket(server, port);
         input = new DataInputStream(socket.getInputStream());
         output = new DataOutputStream(socket.getOutputStream());
@@ -49,15 +58,18 @@ public class Client {
 
         connected = true;
         update.start();
+
+        call(ClientCallback::onConnect);
     }
 
     public void disconnect() throws Exception {
-        disconnect(true);
+        disconnect(true, DisconnectReason.ClientDisconnect);
     }
 
-    private void disconnect(boolean sendPacket) throws Exception {
-        if (sendPacket) ClientSend.disconnect(this);
+    private void disconnect(boolean sendPacket, DisconnectReason reason) throws Exception {
+        call((callback) -> callback.onDisconnect(reason));
 
+        if (sendPacket) ClientSend.disconnect(this);
         connected = false;
         update.stop();
 
@@ -70,6 +82,10 @@ public class Client {
         packet.writeLength();
         output.write(packet.toArray(), 0, packet.length());
         output.flush();
+    }
+
+    public void registerCallback(ClientCallback callback) {
+        callbacks.add(callback);
     }
 
     private void update() throws Exception {
@@ -106,11 +122,18 @@ public class Client {
     }
 
     private void handlePacketCallback(Packet packet, int id) throws Exception {
-        if (packet.isType(ServerPacket.Close, id)) {
-            disconnect(false);
+        if (packet.isType(ServerPacket.ForceDisconnect, id)) {
+            DisconnectReason reason = (DisconnectReason)packet.readObject();
+            disconnect(false, reason);
         } else if (packet.isType(ServerPacket.AssignID, id)) {
             ClientHandle.receiveId(this, packet);
+        } else {
+            call((callback) -> callback.onPacket(packet, id));
         }
+    }
+
+    private void call(Consumer<ClientCallback> callback) {
+        callbacks.forEach(callback);
     }
 
     public String getHost() {
