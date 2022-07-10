@@ -4,9 +4,13 @@ import Networking.Callbacks.ClientCallback;
 import Networking.DisconnectReason;
 import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
+import Networking.TransferProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +21,16 @@ public class Client {
     private Socket socket;
     private DataInputStream input;
     private DataOutputStream output;
+    private DatagramSocket udpSocket;
 
     private final String server;
     private final int port;
+    private InetAddress address;
     private String id;
     private String name;
 
     private boolean connected;
+    private boolean initialized;
 
     private Thread update;
 
@@ -35,6 +42,12 @@ public class Client {
     public Client(String server, int port) {
         this.server = server;
         this.port = port;
+
+        try {
+            this.address = InetAddress.getByName(server);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void connect() throws Exception {
@@ -43,6 +56,7 @@ public class Client {
         socket = new Socket(server, port);
         input = new DataInputStream(socket.getInputStream());
         output = new DataOutputStream(socket.getOutputStream());
+        udpSocket = new DatagramSocket();
 
         receiveBuffer = new byte[4096];
         receiveData = new Packet();
@@ -59,8 +73,6 @@ public class Client {
 
         connected = true;
         update.start();
-
-        call(ClientCallback::onConnect);
     }
 
     public void disconnect() throws Exception {
@@ -72,6 +84,7 @@ public class Client {
 
         if (sendPacket) ClientSend.disconnect(this);
         connected = false;
+        initialized = false;
         update.stop();
 
         input.close();
@@ -79,10 +92,25 @@ public class Client {
         socket.close();
     }
 
-    public void send(Packet packet) throws Exception {
+    public void send(Packet packet, TransferProtocol protocol) throws Exception {
+        if (protocol == TransferProtocol.TCP) {
+            sendTcp(packet);
+        } else {
+            sendUdp(packet);
+        }
+    }
+
+    public void sendTcp(Packet packet) throws Exception {
         packet.writeLength();
         output.write(packet.toArray(), 0, packet.length());
         output.flush();
+    }
+
+    public void sendUdp(Packet packet) throws Exception {
+        packet.writeId(id);
+        packet.writeLength();
+        DatagramPacket dp = new DatagramPacket(packet.toArray(), packet.length(), address, port);
+        udpSocket.send(dp);
     }
 
     public void registerCallback(ClientCallback callback) {
@@ -128,6 +156,8 @@ public class Client {
             disconnect(false, reason);
         } else if (packet.isType(ServerPacket.AssignData, id)) {
             ClientHandle.assignData(this, packet);
+            initialized = true;
+            call(ClientCallback::onConnect);
         } else {
             call((callback) -> callback.onPacket(packet, id));
         }

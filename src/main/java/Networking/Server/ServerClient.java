@@ -3,6 +3,7 @@ package Networking.Server;
 import Networking.DisconnectReason;
 import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
+import Networking.TransferProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -113,7 +114,7 @@ public class ServerClient {
         } else if (packet.isType(ClientPacket.ChangeName, id)) {
             name = packet.readString();
         } else {
-            server.call((c) -> c.onPacket(this, packet, id));
+            server.call((c) -> c.onPacket(this, packet, id, TransferProtocol.TCP));
         }
     }
 

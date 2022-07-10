@@ -180,13 +180,20 @@ public class Packet {
         }
     }
 
+    public void writeId(String id) {
+        byte[] length = ByteBuffer.allocate(4).putInt(id.length()).array();
+        byte[] data = id.getBytes();
+        insertRange(data, 0);
+        insertRange(length, 0);
+    }
+
     public void writeLength() {
         byte[] data = ByteBuffer.allocate(4).putInt(buffer.size()).array();
         insertRange(data, 0);
     }
 
     public boolean isType(ServerPacket packetType, int packetID) {
-        return packetType.ordinal() == packetID;
+        return packetType.hashCode() == packetID;
     }
 
     public boolean isType(ClientPacket packetType, int packetID) {

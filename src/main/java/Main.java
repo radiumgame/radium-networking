@@ -2,14 +2,18 @@ import Networking.Callbacks.ClientCallback;
 import Networking.Callbacks.ServerCallback;
 import Networking.Client.Client;
 import Networking.DisconnectReason;
+import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
 import Networking.Server.Server;
 import Networking.Server.ServerClient;
+import Networking.TransferProtocol;
 
 import java.util.Scanner;
 
 public class Main implements ServerCallback, ClientCallback {
+
+    private static Client client;
 
     public static void main(String[] args) {
         try {
@@ -22,7 +26,7 @@ public class Main implements ServerCallback, ClientCallback {
     private void start() throws Exception {
         Server server = new Server(8080, 10);
         server.registerCallback(this);
-        Client client = new Client("127.0.0.1", server.getPort());
+        client = new Client("127.0.0.1", server.getPort());
         client.registerCallback(this);
         client.connect();
         client.setName("radiumengine");
@@ -66,7 +70,7 @@ public class Main implements ServerCallback, ClientCallback {
     }
 
     @Override
-    public void onPacket(ServerClient client, Packet packet, int type) {
+    public void onPacket(ServerClient client, Packet packet, int type, TransferProtocol protocol) {
 
     }
 }
