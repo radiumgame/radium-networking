@@ -2,6 +2,7 @@ package Networking.Client;
 
 import Networking.Callbacks.ClientCallback;
 import Networking.DisconnectReason;
+import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
 import Networking.TransferProtocol;
@@ -33,9 +34,12 @@ public class Client {
     private boolean initialized;
 
     private Thread update;
+    private Thread udpReceive;
 
     private byte[] receiveBuffer;
     private Packet receiveData;
+
+    private byte[] udpReceiveBuffer;
 
     private final List<ClientCallback> callbacks = new ArrayList<>();
 
@@ -61,6 +65,8 @@ public class Client {
         receiveBuffer = new byte[4096];
         receiveData = new Packet();
 
+        udpReceiveBuffer = new byte[65535];
+
         update = new Thread(() -> {
             try {
                 while (connected) {
@@ -70,9 +76,19 @@ public class Client {
                 if (connected) e.printStackTrace();
             }
         });
+        udpReceive = new Thread(() -> {
+            try {
+                while (connected) {
+                    receiveUdp();
+                }
+            } catch (Exception e) {
+                if (connected) e.printStackTrace();
+            }
+        });
 
         connected = true;
         update.start();
+        udpReceive.start();
     }
 
     public void disconnect() throws Exception {
@@ -119,10 +135,17 @@ public class Client {
 
     private void update() throws Exception {
         input.read(receiveBuffer, 0, receiveBuffer.length);
-        receiveData.reset(handlePacket(receiveBuffer));
+        receiveData.reset(handlePacket(receiveBuffer, TransferProtocol.TCP));
     }
 
-    private boolean handlePacket(byte[] data) throws Exception {
+    private void receiveUdp() throws Exception {
+        DatagramPacket receive = new DatagramPacket(udpReceiveBuffer, udpReceiveBuffer.length);
+        udpSocket.receive(receive);
+        byte[] data = receive.getData();
+        receiveData.reset(handlePacket(data, TransferProtocol.UDP));
+    }
+
+    private boolean handlePacket(byte[] data, TransferProtocol protocol) throws Exception {
         int packetLength = 0;
 
         receiveData.setBytes(data);
@@ -138,7 +161,7 @@ public class Client {
 
             Packet newPacket = new Packet(packetBytes);
             int packetID = newPacket.readInt();
-            handlePacketCallback(newPacket, packetID);
+            handlePacketCallback(newPacket, packetID, protocol);
 
             packetLength = 0;
             if (receiveData.unreadLength() >= 4) {
@@ -150,16 +173,19 @@ public class Client {
         return packetLength <= 1;
     }
 
-    private void handlePacketCallback(Packet packet, int id) throws Exception {
+    private void handlePacketCallback(Packet packet, int id, TransferProtocol protocol) throws Exception {
         if (packet.isType(ServerPacket.ForceDisconnect, id)) {
             DisconnectReason reason = (DisconnectReason)packet.readObject();
             disconnect(false, reason);
         } else if (packet.isType(ServerPacket.AssignData, id)) {
             ClientHandle.assignData(this, packet);
+            Packet init = new Packet(ClientPacket.UdpInitialize);
+            sendUdp(init);
+
             initialized = true;
             call(ClientCallback::onConnect);
         } else {
-            call((callback) -> callback.onPacket(packet, id));
+            call((callback) -> callback.onPacket(packet, id, protocol));
         }
     }
 

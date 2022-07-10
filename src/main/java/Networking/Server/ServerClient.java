@@ -7,6 +7,9 @@ import Networking.TransferProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 
 public class ServerClient {
@@ -17,6 +20,9 @@ public class ServerClient {
     private final Socket socket;
     private final DataInputStream input;
     private final DataOutputStream output;
+    private final DatagramSocket udpSocket;
+
+    private final InetAddress address;
 
     private final byte[] receiveBuffer;
     private final Packet receiveData;
@@ -26,15 +32,20 @@ public class ServerClient {
     private boolean connected;
     private String name;
 
+    public boolean initializedUdp = false;
+    public int udpPort;
+
     public ServerClient(String id, Socket socket, Server server) throws Exception {
         this.id = id;
         this.socket = socket;
         this.server = server;
+        this.address = socket.getInetAddress();
 
         name = "Client" + hashCode();
 
         input = new DataInputStream(socket.getInputStream());
         output = new DataOutputStream(socket.getOutputStream());
+        udpSocket = new DatagramSocket();
 
         receiveBuffer = new byte[4096];
         receiveData = new Packet();
@@ -73,10 +84,24 @@ public class ServerClient {
         }
     }
 
-    public void send(Packet packet) throws Exception {
+    public void send(Packet packet, TransferProtocol protocol) throws Exception {
+        if (protocol == TransferProtocol.TCP) {
+            sendTcp(packet);
+        } else {
+            sendUdp(packet);
+        }
+    }
+
+    public void sendTcp(Packet packet) throws Exception {
         packet.writeLength();
         output.write(packet.toArray(), 0, packet.length());
         output.flush();
+    }
+
+    public void sendUdp(Packet packet) throws Exception {
+        packet.writeLength();
+        DatagramPacket dp = new DatagramPacket(packet.toArray(), packet.length(), address, udpPort);
+        udpSocket.send(dp);
     }
 
     private boolean handlePacket(byte[] data) throws Exception {

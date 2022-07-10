@@ -2,6 +2,7 @@ package Networking.Server;
 
 import Networking.Callbacks.ServerCallback;
 import Networking.DisconnectReason;
+import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
 import Networking.TransferProtocol;
 
@@ -105,10 +106,10 @@ public class Server {
         DatagramPacket receive = new DatagramPacket(udpReceiveBuffer, udpReceiveBuffer.length);
         udpSocket.receive(receive);
         byte[] data = receive.getData();
-        udpReceivePacket.reset(handlePacket(data));
+        udpReceivePacket.reset(handlePacket(data, receive));
     }
 
-    private boolean handlePacket(byte[] data) throws Exception {
+    private boolean handlePacket(byte[] data, DatagramPacket dgp) throws Exception {
         int packetLength = 0;
 
         udpReceivePacket.setBytes(data);
@@ -125,7 +126,7 @@ public class Server {
             Packet newPacket = new Packet(packetBytes);
             String clientId = newPacket.readString();
             int packetID = newPacket.readInt();
-            handlePacketCallback(newPacket, packetID, clientId);
+            handlePacketCallback(newPacket, packetID, clientId, dgp);
 
             packetLength = 0;
             if (udpReceivePacket.unreadLength() >= 4) {
@@ -137,11 +138,16 @@ public class Server {
         return packetLength <= 1;
     }
 
-    private void handlePacketCallback(Packet packet, int packetID, String userId) throws Exception {
+    private void handlePacketCallback(Packet packet, int packetID, String userId, DatagramPacket dgp) throws Exception {
         ServerClient client = clients.get(userId);
         if (client == null) return;
 
-        call((c) -> c.onPacket(client, packet, packetID, TransferProtocol.UDP));
+        if (packet.isType(ClientPacket.UdpInitialize, packetID)) {
+            client.initializedUdp = true;
+            client.udpPort = dgp.getPort();
+        } else {
+            call((c) -> c.onPacket(client, packet, packetID, TransferProtocol.UDP));
+        }
     }
 
     private String generateId() {

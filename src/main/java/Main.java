@@ -55,7 +55,7 @@ public class Main implements ServerCallback, ClientCallback {
     }
 
     @Override
-    public void onPacket(Packet packet, int type) {
+    public void onPacket(Packet packet, int type, TransferProtocol protocol) {
 
     }
 
