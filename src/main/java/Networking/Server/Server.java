@@ -1,10 +1,12 @@
 package Networking.Server;
 
+import Networking.Callbacks.ServerCallback;
 import Networking.DisconnectReason;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class Server {
 
@@ -17,6 +19,8 @@ public class Server {
     private boolean open;
 
     private Thread acceptThread;
+
+    private final List<ServerCallback> callbacks = new ArrayList<>();
 
     public Server(int port, int maxClients) throws Exception {
         this.port = port;
@@ -52,6 +56,10 @@ public class Server {
         serverSocket.close();
     }
 
+    public void registerCallback(ServerCallback callback) {
+        callbacks.add(callback);
+    }
+
     private void acceptClients() throws Exception {
         Socket newClient = serverSocket.accept();
 
@@ -63,8 +71,9 @@ public class Server {
         }
 
         ServerSend.assignId(client);
-
         clients.put(id, client);
+
+        call((c) -> c.onClientConnect(client));
     }
 
     private String generateId() {
@@ -74,6 +83,12 @@ public class Server {
         }
 
         return id;
+    }
+
+    public void call(Consumer<ServerCallback> callback) {
+        for (ServerCallback c : callbacks) {
+            callback.accept(c);
+        }
     }
 
     public Collection<ServerClient> getClients() {

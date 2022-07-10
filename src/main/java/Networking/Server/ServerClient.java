@@ -46,6 +46,7 @@ public class ServerClient {
     }
 
     public void disconnect(boolean sendPacket, DisconnectReason reason) throws Exception {
+        server.call(c -> c.onClientDisconnect(this, reason));
         if (sendPacket) ServerSend.forceDisconnect(this, reason);
 
         update.stop();
@@ -105,6 +106,8 @@ public class ServerClient {
         if (packet.isType(ClientPacket.Disconnect, id)) {
             server.removeClient(this.id);
             disconnect(false, DisconnectReason.ClientDisconnect);
+        } else {
+            server.call((c) -> c.onPacket(this, packet, id));
         }
     }
 
