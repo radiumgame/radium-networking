@@ -70,7 +70,7 @@ public class Server {
             return;
         }
 
-        ServerSend.assignId(client);
+        ServerSend.assignData(client);
         clients.put(id, client);
 
         call((c) -> c.onClientConnect(client));

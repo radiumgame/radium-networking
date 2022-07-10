@@ -12,4 +12,10 @@ public class ClientSend {
         client.send(packet);
     }
 
+    public static void changeName(Client client, String name) throws Exception {
+        Packet packet = new Packet(ClientPacket.ChangeName);
+        packet.write(name);
+        client.send(packet);
+    }
+
 }

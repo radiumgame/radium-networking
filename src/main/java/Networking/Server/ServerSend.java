@@ -14,9 +14,10 @@ public class ServerSend {
         client.send(packet);
     }
 
-    public static void assignId(ServerClient client) throws Exception {
-        Packet packet = new Packet(ServerPacket.AssignID);
+    public static void assignData(ServerClient client) throws Exception {
+        Packet packet = new Packet(ServerPacket.AssignData);
         packet.write(client.getId());
+        packet.write(client.getName());
         client.send(packet);
     }
 

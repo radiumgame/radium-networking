@@ -25,10 +25,11 @@ public class Main implements ServerCallback, ClientCallback {
         Client client = new Client("127.0.0.1", server.getPort());
         client.registerCallback(this);
         client.connect();
+        client.setName("radiumengine");
 
         String line;
         Scanner scanner = new Scanner(System.in);
-        while (!(line = scanner.next()).equals("exit")) {
+        while (!(line = scanner.nextLine()).equals("exit")) {
             if (line.equals("connect")) {
                 client.connect();
             } else if (line.equals("disconnect")) {
@@ -41,17 +42,17 @@ public class Main implements ServerCallback, ClientCallback {
 
     @Override
     public void onConnect() {
-        System.out.println("Connected!");
+
     }
 
     @Override
     public void onDisconnect(DisconnectReason reason) {
-        System.out.println("Client: " + reason);
+
     }
 
     @Override
     public void onPacket(Packet packet, int type) {
-        System.out.println("Packet: " + ServerPacket.values()[type]);
+
     }
 
     @Override

@@ -23,11 +23,14 @@ public class ServerClient {
     private final Thread update;
 
     private boolean connected;
+    private String name;
 
     public ServerClient(String id, Socket socket, Server server) throws Exception {
         this.id = id;
         this.socket = socket;
         this.server = server;
+
+        name = "Client" + hashCode();
 
         input = new DataInputStream(socket.getInputStream());
         output = new DataOutputStream(socket.getOutputStream());
@@ -106,6 +109,8 @@ public class ServerClient {
         if (packet.isType(ClientPacket.Disconnect, id)) {
             server.removeClient(this.id);
             disconnect(false, DisconnectReason.ClientDisconnect);
+        } else if (packet.isType(ClientPacket.ChangeName, id)) {
+            name = packet.readString();
         } else {
             server.call((c) -> c.onPacket(this, packet, id));
         }
@@ -117,6 +122,10 @@ public class ServerClient {
 
     public String getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Socket getSocket() {

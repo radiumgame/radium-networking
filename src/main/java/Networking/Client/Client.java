@@ -21,6 +21,7 @@ public class Client {
     private final String server;
     private final int port;
     private String id;
+    private String name;
 
     private boolean connected;
 
@@ -125,8 +126,8 @@ public class Client {
         if (packet.isType(ServerPacket.ForceDisconnect, id)) {
             DisconnectReason reason = (DisconnectReason)packet.readObject();
             disconnect(false, reason);
-        } else if (packet.isType(ServerPacket.AssignID, id)) {
-            ClientHandle.receiveId(this, packet);
+        } else if (packet.isType(ServerPacket.AssignData, id)) {
+            ClientHandle.assignData(this, packet);
         } else {
             call((callback) -> callback.onPacket(packet, id));
         }
@@ -134,6 +135,25 @@ public class Client {
 
     private void call(Consumer<ClientCallback> callback) {
         callbacks.forEach(callback);
+    }
+
+    public void setName(String name) throws Exception {
+        setName(name, true);
+    }
+
+    public void setName(String name, boolean sendPacket) throws Exception {
+        if (!connected) return;
+
+        for (char c : name.toCharArray()) {
+            if (Character.isSpaceChar(c) || Character.isWhitespace(c)) {
+                System.err.println("Name may not contain spaces or whitespace.");
+                return;
+            }
+        }
+
+        if (sendPacket) ClientSend.changeName(this, name);
+
+        this.name = name;
     }
 
     public String getHost() {
