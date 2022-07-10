@@ -184,6 +184,10 @@ public class Client {
 
             initialized = true;
             call(ClientCallback::onConnect);
+        } else if (packet.isType(ServerPacket.NewClient, id)) {
+            call((callback) -> callback.onNewClient(packet.readString()));
+        } else if (packet.isType(ServerPacket.ClientDisconnect, id)) {
+            call((callback) -> callback.onClientDisconnect(packet.readString()));
         } else {
             call((callback) -> callback.onPacket(packet, id, protocol));
         }

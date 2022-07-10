@@ -60,7 +60,17 @@ public class ServerClient {
         update.start();
     }
 
+    public void disconnect() throws Exception {
+        disconnect(true, DisconnectReason.Unspecified);
+    }
+
+    public void disconnect(DisconnectReason reason) throws Exception {
+        disconnect(true, reason);
+    }
+
     public void disconnect(boolean sendPacket, DisconnectReason reason) throws Exception {
+        ServerSend.clientDisconnect(server, this);
+
         server.call(c -> c.onClientDisconnect(this, reason));
         if (sendPacket) ServerSend.forceDisconnect(this, reason);
 
@@ -99,6 +109,8 @@ public class ServerClient {
     }
 
     public void sendUdp(Packet packet) throws Exception {
+        if (!initializedUdp) return;
+
         packet.writeLength();
         DatagramPacket dp = new DatagramPacket(packet.toArray(), packet.length(), address, udpPort);
         udpSocket.send(dp);

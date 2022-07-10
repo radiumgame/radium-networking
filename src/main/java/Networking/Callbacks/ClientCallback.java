@@ -5,10 +5,12 @@ import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
 import Networking.TransferProtocol;
 
-public interface ClientCallback {
+public abstract class ClientCallback {
 
-    void onConnect();
-    void onDisconnect(DisconnectReason reason);
-    void onPacket(Packet packet, int type, TransferProtocol protocol);
+    public void onConnect() {}
+    public void onDisconnect(DisconnectReason reason) {}
+    public void onPacket(Packet packet, int type, TransferProtocol protocol) {}
+    public void onNewClient(String clientId) {}
+    public void onClientDisconnect(String clientId) {}
 
 }

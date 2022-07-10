@@ -22,4 +22,16 @@ public class ServerSend {
         client.send(packet, TransferProtocol.TCP);
     }
 
+    public static void newClient(Server server, ServerClient client) throws Exception {
+        Packet packet = new Packet(ServerPacket.NewClient);
+        packet.write(client.getId());
+        server.sendToAll(packet, TransferProtocol.TCP, client.getId());
+    }
+
+    public static void clientDisconnect(Server server, ServerClient client) throws Exception {
+        Packet packet = new Packet(ServerPacket.ClientDisconnect);
+        packet.write(client.getId());
+        server.sendToAll(packet, TransferProtocol.TCP, client.getId());
+    }
+
 }

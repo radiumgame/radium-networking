@@ -98,8 +98,21 @@ public class Server {
 
         ServerSend.assignData(client);
         clients.put(id, client);
-
+        ServerSend.newClient(this, client);
         call((c) -> c.onClientConnect(client));
+    }
+
+    public void sendToAll(Packet packet, TransferProtocol protocol) throws Exception {
+        for (ServerClient client : getClients()) {
+            client.send(packet, protocol);
+        }
+    }
+
+    public void sendToAll(Packet packet, TransferProtocol protocol, String except) throws Exception {
+        for (ServerClient client : getClients()) {
+            if (client.getId().equals(except)) continue;
+            client.send(packet, protocol);
+        }
     }
 
     private void receiveUdp() throws Exception {
