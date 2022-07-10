@@ -10,11 +10,11 @@ import java.util.*;
 public class Server {
 
     private ServerSocket serverSocket;
-    private HashMap<String, ServerClient> clients = new HashMap<>();
+    private final HashMap<String, ServerClient> clients = new HashMap<>();
 
     private final int MAX_CLIENTS;
 
-    private int port;
+    private final int port;
     private boolean open;
 
     private Thread acceptThread;
@@ -45,7 +45,7 @@ public class Server {
 
     public void close() throws IOException {
         for (ServerClient client : getClients()) {
-            client.getSocket().close();
+            client.disconnect(true);
         }
 
         open = false;
@@ -56,15 +56,11 @@ public class Server {
     private void acceptClients() throws IOException {
         Socket newClient = serverSocket.accept();
         String id = generateId();
-        ServerClient client = new ServerClient(id, newClient);
+        ServerClient client = new ServerClient(id, newClient, this);
+
+        ServerSend.assignId(client);
 
         clients.put(id, client);
-
-        Packet welcome = new Packet(1);
-        welcome.write("welcome to the server!");
-        client.send(welcome);
-
-        System.out.println(client.getIp() + " connected.");
     }
 
     private String generateId() {
@@ -78,6 +74,10 @@ public class Server {
 
     public Collection<ServerClient> getClients() {
         return clients.values();
+    }
+
+    public void removeClient(String id) {
+        clients.remove(id);
     }
 
     public int getMaxClients() {

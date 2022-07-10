@@ -1,6 +1,7 @@
 package Networking.Client;
 
 import Networking.Packet.Packet;
+import Networking.Packet.ServerPacket;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,7 +45,7 @@ public class Client {
                     update();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                if (connected) e.printStackTrace();
             }
         });
 
@@ -53,6 +54,12 @@ public class Client {
     }
 
     public void disconnect() throws IOException {
+        disconnect(true);
+    }
+
+    private void disconnect(boolean sendPacket) throws IOException {
+        if (sendPacket) ClientSend.disconnect(this);
+
         connected = false;
         update.stop();
 
@@ -61,14 +68,18 @@ public class Client {
         socket.close();
     }
 
+    public void send(Packet packet) throws IOException {
+        packet.writeLength();
+        output.write(packet.toArray(), 0, packet.length());
+        output.flush();
+    }
+
     private void update() throws IOException {
         input.read(receiveBuffer, 0, receiveBuffer.length);
-        int byteLength = receiveBuffer.length;
-
         receiveData.reset(handlePacket(receiveBuffer));
     }
 
-    private boolean handlePacket(byte[] data) {
+    private boolean handlePacket(byte[] data) throws IOException {
         int packetLength = 0;
 
         receiveData.setBytes(data);
@@ -84,9 +95,7 @@ public class Client {
 
             Packet newPacket = new Packet(packetBytes);
             int packetID = newPacket.readInt();
-            if (packetID == 1) {
-                System.out.println(newPacket.readString());
-            }
+            handlePacketCallback(newPacket, packetID);
 
             packetLength = 0;
             if (receiveData.unreadLength() >= 4) {
@@ -95,9 +104,15 @@ public class Client {
             }
         }
 
-        if (packetLength <= 1) return true;
+        return packetLength <= 1;
+    }
 
-        return false;
+    private void handlePacketCallback(Packet packet, int id) throws IOException {
+        if (packet.isType(ServerPacket.Close, id)) {
+            disconnect(false);
+        } else if (packet.isType(ServerPacket.AssignID, id)) {
+            ClientHandle.receiveId(this, packet);
+        }
     }
 
     public String getHost() {
@@ -106,6 +121,10 @@ public class Client {
 
     public int getPort() {
         return port;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getId() {

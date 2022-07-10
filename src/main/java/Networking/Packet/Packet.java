@@ -24,6 +24,20 @@ public class Packet {
         write(id);
     }
 
+    public Packet(ServerPacket id) {
+        buffer = new ArrayList<>();
+        readPos = 0;
+
+        write(id.ordinal());
+    }
+
+    public Packet(ClientPacket id) {
+        buffer = new ArrayList<>();
+        readPos = 0;
+
+        write(id.ordinal());
+    }
+
     public Packet(byte[] data) {
         buffer = new ArrayList<>();
         readPos = 0;
@@ -109,6 +123,14 @@ public class Packet {
     public void writeLength() {
         byte[] data = ByteBuffer.allocate(4).putInt(buffer.size()).array();
         insertRange(data, 0);
+    }
+
+    public boolean isType(ServerPacket packetType, int packetID) {
+        return packetType.ordinal() == packetID;
+    }
+
+    public boolean isType(ClientPacket packetType, int packetID) {
+        return packetType.ordinal() == packetID;
     }
 
     public int unreadLength() {
