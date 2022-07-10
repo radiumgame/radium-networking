@@ -42,12 +42,12 @@ public class Main implements ServerCallback, ClientCallback {
 
     @Override
     public void onConnect() {
-
+        System.out.println("Connected to server!");
     }
 
     @Override
     public void onDisconnect(DisconnectReason reason) {
-
+        System.out.println("Disconnected from server: " + reason.toString());
     }
 
     @Override

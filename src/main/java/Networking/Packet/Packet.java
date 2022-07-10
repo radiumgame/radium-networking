@@ -30,14 +30,14 @@ public class Packet {
         buffer = new ArrayList<>();
         readPos = 0;
 
-        write(id.ordinal());
+        write(id.hashCode());
     }
 
     public Packet(ClientPacket id) {
         buffer = new ArrayList<>();
         readPos = 0;
 
-        write(id.ordinal());
+        write(id.hashCode());
     }
 
     public Packet(byte[] data) {
@@ -190,7 +190,7 @@ public class Packet {
     }
 
     public boolean isType(ClientPacket packetType, int packetID) {
-        return packetType.ordinal() == packetID;
+        return packetType.hashCode() == packetID;
     }
 
     public int unreadLength() {

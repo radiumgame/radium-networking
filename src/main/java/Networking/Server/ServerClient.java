@@ -59,6 +59,7 @@ public class ServerClient {
         socket.close();
 
         connected = false;
+        server.removeClient(id);
     }
 
     private void update() {
