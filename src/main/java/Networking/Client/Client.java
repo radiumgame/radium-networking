@@ -5,8 +5,6 @@ import Networking.Packet.ServerPacket;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.net.Socket;
 
 public class Client {
@@ -31,7 +29,7 @@ public class Client {
         this.port = port;
     }
 
-    public void connect() throws IOException {
+    public void connect() throws Exception {
         socket = new Socket(server, port);
         input = new DataInputStream(socket.getInputStream());
         output = new DataOutputStream(socket.getOutputStream());
@@ -44,7 +42,7 @@ public class Client {
                 while (connected) {
                     update();
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 if (connected) e.printStackTrace();
             }
         });
@@ -53,11 +51,11 @@ public class Client {
         update.start();
     }
 
-    public void disconnect() throws IOException {
+    public void disconnect() throws Exception {
         disconnect(true);
     }
 
-    private void disconnect(boolean sendPacket) throws IOException {
+    private void disconnect(boolean sendPacket) throws Exception {
         if (sendPacket) ClientSend.disconnect(this);
 
         connected = false;
@@ -68,18 +66,18 @@ public class Client {
         socket.close();
     }
 
-    public void send(Packet packet) throws IOException {
+    public void send(Packet packet) throws Exception {
         packet.writeLength();
         output.write(packet.toArray(), 0, packet.length());
         output.flush();
     }
 
-    private void update() throws IOException {
+    private void update() throws Exception {
         input.read(receiveBuffer, 0, receiveBuffer.length);
         receiveData.reset(handlePacket(receiveBuffer));
     }
 
-    private boolean handlePacket(byte[] data) throws IOException {
+    private boolean handlePacket(byte[] data) throws Exception {
         int packetLength = 0;
 
         receiveData.setBytes(data);
@@ -107,7 +105,7 @@ public class Client {
         return packetLength <= 1;
     }
 
-    private void handlePacketCallback(Packet packet, int id) throws IOException {
+    private void handlePacketCallback(Packet packet, int id) throws Exception {
         if (packet.isType(ServerPacket.Close, id)) {
             disconnect(false);
         } else if (packet.isType(ServerPacket.AssignID, id)) {

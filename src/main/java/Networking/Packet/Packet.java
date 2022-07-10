@@ -1,5 +1,7 @@
 package Networking.Packet;
 
+import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -72,9 +74,28 @@ public class Packet {
         addRange(ByteBuffer.allocate(4).putInt(data).array());
     }
 
+    public void write(float data) {
+        addRange(ByteBuffer.allocate(4).putFloat(data).array());
+    }
+
+    public void write(boolean data) {
+        buffer.add((byte) (data ? 1 : 0));
+    }
+
     public void write(String data) {
         write(data.length());
         write(data.getBytes());
+    }
+
+    public void write(Object data) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(data);
+        oos.flush();
+
+        byte[] bytes = baos.toByteArray();
+        write(bytes.length);
+        write(bytes);
     }
 
     public byte[] readBytes(int length) {
@@ -102,6 +123,31 @@ public class Packet {
         }
     }
 
+    public float readFloat() {
+        if (buffer.size() > readPos) {
+            byte[] data = toByteArray(buffer.subList(readPos, readPos + 4).toArray());
+            float value = ByteBuffer.allocate(4).put(data).getFloat();
+            readPos += 4;
+
+            return value;
+        } else {
+            System.err.println("Couldn't read type int from packet");
+            return -1;
+        }
+    }
+
+    public boolean readBoolean() {
+        if (buffer.size() > readPos) {
+            boolean value = buffer.get(readPos) == 1;
+            readPos++;
+
+            return value;
+        } else {
+            System.err.println("Couldn't read type boolean from packet");
+            return false;
+        }
+    }
+
     public String readString() {
         if (buffer.size() > readPos) {
             int length = readInt();
@@ -116,6 +162,20 @@ public class Packet {
             return value;
         } else {
             System.err.println("Couldn't read type String from packet");
+            return null;
+        }
+    }
+
+    public Object readObject() throws Exception, ClassNotFoundException {
+        if (buffer.size() > readPos) {
+            int length = readInt();
+            byte[] data = toByteArray(buffer.subList(readPos, readPos + length).toArray());
+            ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+
+            return ois.readObject();
+        } else {
+            System.err.println("Couldn't read type Object from packet");
             return null;
         }
     }

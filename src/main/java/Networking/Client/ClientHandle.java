@@ -2,8 +2,6 @@ package Networking.Client;
 
 import Networking.Packet.Packet;
 
-import java.io.IOException;
-
 public class ClientHandle {
 
     protected ClientHandle() {}

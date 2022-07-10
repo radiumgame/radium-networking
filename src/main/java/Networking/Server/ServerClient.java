@@ -5,8 +5,6 @@ import Networking.Packet.Packet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.net.Socket;
 
 public class ServerClient {
@@ -25,7 +23,7 @@ public class ServerClient {
 
     private boolean connected;
 
-    public ServerClient(String id, Socket socket, Server server) throws IOException {
+    public ServerClient(String id, Socket socket, Server server) throws Exception {
         this.id = id;
         this.socket = socket;
         this.server = server;
@@ -46,7 +44,7 @@ public class ServerClient {
         update.start();
     }
 
-    public void disconnect(boolean sendPacket) throws IOException {
+    public void disconnect(boolean sendPacket) throws Exception {
         if (sendPacket) ServerSend.forceDisconnect(this);
 
         update.stop();
@@ -68,13 +66,13 @@ public class ServerClient {
         }
     }
 
-    public void send(Packet packet) throws IOException {
+    public void send(Packet packet) throws Exception {
         packet.writeLength();
         output.write(packet.toArray(), 0, packet.length());
         output.flush();
     }
 
-    private boolean handlePacket(byte[] data) throws IOException {
+    private boolean handlePacket(byte[] data) throws Exception {
         int packetLength = 0;
 
         receiveData.setBytes(data);
@@ -102,7 +100,7 @@ public class ServerClient {
         return packetLength <= 1;
     }
 
-    private void handlePacketCallback(Packet packet, int id) throws IOException {
+    private void handlePacketCallback(Packet packet, int id) throws Exception {
         if (packet.isType(ClientPacket.Disconnect, id)) {
             server.removeClient(this.id);
             disconnect(false);

@@ -1,8 +1,5 @@
 package Networking.Server;
 
-import Networking.Packet.Packet;
-
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -19,14 +16,14 @@ public class Server {
 
     private Thread acceptThread;
 
-    public Server(int port, int maxClients) throws IOException {
+    public Server(int port, int maxClients) throws Exception {
         this.port = port;
         this.MAX_CLIENTS = maxClients;
 
         create();
     }
 
-    private void create() throws IOException {
+    private void create() throws Exception {
         serverSocket = new ServerSocket(port);
 
         acceptThread = new Thread(() -> {
@@ -34,7 +31,7 @@ public class Server {
                 while (open) {
                     acceptClients();
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 if (open) e.printStackTrace();
             }
         }, "SERVER-ACCEPT-" + hashCode());
@@ -43,7 +40,7 @@ public class Server {
         acceptThread.start();
     }
 
-    public void close() throws IOException {
+    public void close() throws Exception {
         for (ServerClient client : getClients()) {
             client.disconnect(true);
         }
@@ -53,7 +50,7 @@ public class Server {
         serverSocket.close();
     }
 
-    private void acceptClients() throws IOException {
+    private void acceptClients() throws Exception {
         Socket newClient = serverSocket.accept();
         String id = generateId();
         ServerClient client = new ServerClient(id, newClient, this);
