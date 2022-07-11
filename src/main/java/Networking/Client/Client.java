@@ -179,11 +179,17 @@ public class Client {
             disconnect(false, reason);
         } else if (packet.isType(ServerPacket.AssignData, id)) {
             ClientHandle.assignData(this, packet);
+            int currentClients = packet.readInt();
+            List<String> clientIDs = new ArrayList<>();
+            for (int i = 0; i < currentClients; i++) {
+                clientIDs.add(packet.readString());
+            }
+
             Packet init = new Packet(ClientPacket.UdpInitialize);
             sendUdp(init);
 
             initialized = true;
-            call(ClientCallback::onConnect);
+            call((c) -> c.onConnect(clientIDs));
         } else if (packet.isType(ServerPacket.NewClient, id)) {
             call((callback) -> callback.onNewClient(packet.readString()));
         } else if (packet.isType(ServerPacket.ClientDisconnect, id)) {

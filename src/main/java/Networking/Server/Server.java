@@ -96,7 +96,7 @@ public class Server {
             return;
         }
 
-        ServerSend.assignData(client);
+        ServerSend.assignData(this, client);
         clients.put(id, client);
         ServerSend.newClient(this, client);
         call((c) -> c.onClientConnect(client));

@@ -5,6 +5,8 @@ import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
 import Networking.TransferProtocol;
 
+import java.util.Collection;
+
 public class ServerSend {
 
     protected ServerSend() {}
@@ -15,10 +17,17 @@ public class ServerSend {
         client.send(packet, TransferProtocol.TCP);
     }
 
-    public static void assignData(ServerClient client) throws Exception {
+    public static void assignData(Server server, ServerClient client) throws Exception {
         Packet packet = new Packet(ServerPacket.AssignData);
         packet.write(client.getId());
         packet.write(client.getName());
+
+        Collection<ServerClient> clients = server.getClients();
+        packet.write(clients.size());
+        for (ServerClient c : clients) {
+            packet.write(c.getId());
+        }
+
         client.send(packet, TransferProtocol.TCP);
     }
 

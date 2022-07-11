@@ -9,6 +9,7 @@ public class ClientHandle {
     public static void assignData(Client client, Packet packet) throws Exception {
         String id = packet.readString();
         String name = packet.readString();
+
         client.setId(id);
         client.setName(name, false);
     }

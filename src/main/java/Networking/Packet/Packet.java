@@ -39,6 +39,14 @@ public class Packet {
         write(id.name().hashCode());
     }
 
+    public Packet(String id) {
+        buffer = new ArrayList<>();
+        readPos = 0;
+
+        write(id.hashCode());
+    }
+
+
     public Packet(byte[] data) {
         buffer = new ArrayList<>();
         readPos = 0;
@@ -197,6 +205,10 @@ public class Packet {
 
     public boolean isType(ClientPacket packetType, int packetID) {
         return packetType.name().hashCode() == packetID;
+    }
+
+    public boolean isType(String packetType, int packetID) {
+        return packetType.hashCode() == packetID;
     }
 
     public int unreadLength() {
