@@ -1,7 +1,6 @@
 package Networking.Packet;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -30,14 +29,14 @@ public class Packet {
         buffer = new ArrayList<>();
         readPos = 0;
 
-        write(id.hashCode());
+        write(id.name().hashCode());
     }
 
     public Packet(ClientPacket id) {
         buffer = new ArrayList<>();
         readPos = 0;
 
-        write(id.hashCode());
+        write(id.name().hashCode());
     }
 
     public Packet(byte[] data) {
@@ -193,11 +192,11 @@ public class Packet {
     }
 
     public boolean isType(ServerPacket packetType, int packetID) {
-        return packetType.hashCode() == packetID;
+        return packetType.name().hashCode() == packetID;
     }
 
     public boolean isType(ClientPacket packetType, int packetID) {
-        return packetType.hashCode() == packetID;
+        return packetType.name().hashCode() == packetID;
     }
 
     public int unreadLength() {

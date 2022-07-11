@@ -2,12 +2,11 @@ import Networking.Callbacks.ClientCallback;
 import Networking.Callbacks.ServerCallback;
 import Networking.Client.Client;
 import Networking.Server.Server;
+import Networking.Server.ServerClient;
 
 import java.util.Scanner;
 
-public class Main extends ClientCallback {
-
-    private static Client client;
+public class Main {
 
     public static void main(String[] args) {
         try {
@@ -18,22 +17,22 @@ public class Main extends ClientCallback {
     }
 
     private void start() throws Exception {
-        Server server = new Server(8080, 10);
-        client = new Client("127.0.0.1", server.getPort());
-        client.registerCallback(this);
-        client.connect();
-
         String line;
         Scanner scanner = new Scanner(System.in);
         while (!(line = scanner.nextLine()).equals("exit")) {
-            if (line.equals("connect")) {
+            if (line.equals("server")) {
+                Server server = new Server(8080, 10);
+                server.registerCallback(new ServerCallback() {
+                    @Override
+                    public void onClientConnect(ServerClient client) {
+                        System.out.println("Client connected: " + client.getIp());
+                    }
+                });
+            } else if (line.equals("client")) {
+                Client client = new Client("localhost", 8080);
                 client.connect();
-            } else if (line.equals("disconnect")) {
-                client.disconnect();
             }
         }
-
-        server.close();
     }
 
 }
