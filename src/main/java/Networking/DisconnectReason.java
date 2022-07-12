@@ -6,5 +6,6 @@ public enum DisconnectReason {
     ClientDisconnect,
     ServerFull,
     ServerClose,
+    TimedOut,
 
 }

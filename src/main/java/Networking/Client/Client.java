@@ -5,6 +5,8 @@ import Networking.DisconnectReason;
 import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
+import Networking.Ping.PingStatus;
+import Networking.Ping.Ping;
 import Networking.Sync.NetworkSync;
 import Networking.TransferProtocol;
 
@@ -16,7 +18,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class Client {
@@ -32,11 +33,15 @@ public class Client {
     private String id;
     private String name;
 
+    private float ping;
+    private PingStatus pingStatus = PingStatus.Disconnected;
+
     private boolean connected;
     private boolean initialized;
 
     private Thread update;
     private Thread udpReceive;
+    private Thread pingThread;
 
     private byte[] receiveBuffer;
     private Packet receiveData;
@@ -88,10 +93,20 @@ public class Client {
                 if (connected) e.printStackTrace();
             }
         });
+        pingThread = new Thread(() -> {
+            try {
+                while (connected) {
+                    ping();
+                }
+            } catch (Exception e) {
+                if (connected) e.printStackTrace();
+            }
+        });
 
         connected = true;
         update.start();
         udpReceive.start();
+        pingThread.start();
     }
 
     public void disconnect() throws Exception {
@@ -104,8 +119,12 @@ public class Client {
         if (sendPacket) ClientSend.disconnect(this);
         connected = false;
         initialized = false;
+        ping = 0;
+        pingStatus = PingStatus.Disconnected;
+
         update.stop();
         udpReceive.stop();
+        pingThread.stop();
 
         input.close();
         output.close();
@@ -219,6 +238,21 @@ public class Client {
         }
     }
 
+    private void ping() throws Exception {
+        ping = Ping.ping(server);
+        pingStatus = Ping.getConnectionStatus(ping);
+
+        if (pingStatus == PingStatus.TimedOut) {
+            disconnect(true, DisconnectReason.TimedOut);
+            return;
+        }
+
+        float wait = 500 - ping;
+        if (wait > 0) {
+            Thread.sleep((long)wait);
+        }
+    }
+
     private void call(Consumer<ClientCallback> callback) {
         callbacks.forEach(callback);
     }
@@ -246,12 +280,24 @@ public class Client {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public String getHost() {
         return server;
     }
 
     public int getPort() {
         return port;
+    }
+
+    public float getPing() {
+        return ping;
+    }
+
+    public PingStatus getPingStatus() {
+        return pingStatus;
     }
 
     public void setId(String id) {

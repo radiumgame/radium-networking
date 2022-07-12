@@ -1,5 +1,6 @@
 import Networking.Client.Client;
 import Networking.Server.Server;
+
 import java.util.Scanner;
 
 public class Main {
@@ -26,6 +27,11 @@ public class Main {
             String input = scanner.nextLine();
             if (input.equals("exit")) {
                 break;
+            }
+
+            if (input.equals("ping")) {
+                System.out.println("Ping: " + client.getPing() + "ms");
+                System.out.println("Status: " + client.getPingStatus());
             }
         }
 
