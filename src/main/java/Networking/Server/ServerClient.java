@@ -150,6 +150,11 @@ public class ServerClient {
             disconnect(false, DisconnectReason.ClientDisconnect);
         } else if (packet.isType(ClientPacket.ChangeName, id)) {
             name = packet.readString();
+        } else if (packet.isType(ClientPacket.NetworkSync, id)) {
+            String user = packet.readString();
+            String property = packet.readString();
+            Object data = packet.readObject();
+            ServerSend.networkSync(server, user, property,data, TransferProtocol.TCP);
         } else {
             server.call((c) -> c.onPacket(this, packet, id, TransferProtocol.TCP));
         }

@@ -7,5 +7,6 @@ public enum ServerPacket {
     AssignData,
     NewClient,
     ClientDisconnect,
+    NetworkSync,
 
 }

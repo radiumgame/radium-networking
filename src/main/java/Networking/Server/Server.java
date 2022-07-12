@@ -158,6 +158,11 @@ public class Server {
         if (packet.isType(ClientPacket.UdpInitialize, packetID)) {
             client.initializedUdp = true;
             client.udpPort = dgp.getPort();
+        } else if (packet.isType(ClientPacket.NetworkSync, packetID)) {
+            String user = packet.readString();
+            String property = packet.readString();
+            Object data = packet.readObject();
+            ServerSend.networkSync(this, user, property,data, TransferProtocol.UDP);
         } else {
             call((c) -> c.onPacket(client, packet, packetID, TransferProtocol.UDP));
         }

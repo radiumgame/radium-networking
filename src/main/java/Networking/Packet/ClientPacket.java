@@ -6,5 +6,6 @@ public enum ClientPacket {
     UdpInitialize,
     Disconnect,
     ChangeName,
+    NetworkSync,
 
 }

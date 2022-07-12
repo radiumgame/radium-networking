@@ -43,4 +43,12 @@ public class ServerSend {
         server.sendToAll(packet, TransferProtocol.TCP, client.getId());
     }
 
+    public static void networkSync(Server server, String client, String property, Object data, TransferProtocol protocol) throws Exception {
+        Packet packet = new Packet(ServerPacket.NetworkSync);
+        packet.write(client);
+        packet.write(property);
+        packet.write(data);
+        server.sendToAll(packet, protocol, client);
+    }
+
 }

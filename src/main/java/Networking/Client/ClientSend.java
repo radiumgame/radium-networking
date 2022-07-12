@@ -19,4 +19,12 @@ public class ClientSend {
         client.send(packet, TransferProtocol.TCP);
     }
 
+    public static void networkSync(Client client, String property, Object data, TransferProtocol protocol) throws Exception {
+        Packet packet = new Packet(ClientPacket.NetworkSync);
+        packet.write(client.getId());
+        packet.write(property);
+        packet.write(data);
+        client.send(packet, protocol);
+    }
+
 }

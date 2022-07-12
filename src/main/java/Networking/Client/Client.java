@@ -5,6 +5,7 @@ import Networking.DisconnectReason;
 import Networking.Packet.ClientPacket;
 import Networking.Packet.Packet;
 import Networking.Packet.ServerPacket;
+import Networking.Sync.NetworkSync;
 import Networking.TransferProtocol;
 
 import java.io.DataInputStream;
@@ -15,6 +16,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class Client {
@@ -42,6 +44,7 @@ public class Client {
     private byte[] udpReceiveBuffer;
 
     private final List<ClientCallback> callbacks = new ArrayList<>();
+    private final List<NetworkSync> syncs = new ArrayList<>();
 
     public Client(String server, int port) {
         this.server = server;
@@ -102,6 +105,7 @@ public class Client {
         connected = false;
         initialized = false;
         update.stop();
+        udpReceive.stop();
 
         input.close();
         output.close();
@@ -129,8 +133,16 @@ public class Client {
         udpSocket.send(dp);
     }
 
+    public void updateSyncProperty(String property, Object data, TransferProtocol protocol) throws Exception {
+        ClientSend.networkSync(this, property, data, protocol);
+    }
+
     public void registerCallback(ClientCallback callback) {
         callbacks.add(callback);
+    }
+
+    public void registerSync(NetworkSync sync) {
+        syncs.add(sync);
     }
 
     private void update() throws Exception {
@@ -194,6 +206,14 @@ public class Client {
             call((callback) -> callback.onNewClient(packet.readString()));
         } else if (packet.isType(ServerPacket.ClientDisconnect, id)) {
             call((callback) -> callback.onClientDisconnect(packet.readString()));
+        } else if (packet.isType(ServerPacket.NetworkSync, id)) {
+            String clientId = packet.readString();
+            String name = packet.readString();
+            Object data = packet.readObject();
+            callSync((ns) -> {
+                ns.updateProperty(clientId, name, data);
+                ns.getCallback().onReceive(clientId, name, data);
+            });
         } else {
             call((callback) -> callback.onPacket(packet, id, protocol));
         }
@@ -201,6 +221,10 @@ public class Client {
 
     private void call(Consumer<ClientCallback> callback) {
         callbacks.forEach(callback);
+    }
+
+    private void callSync(Consumer<NetworkSync> callback) {
+        syncs.forEach(callback);
     }
 
     public void setName(String name) throws Exception {
